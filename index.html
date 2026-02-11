@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAN Crimping Master - Education Project</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@500;700;900&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== MAIN CONTAINER ===== */
+        .main-container {
+            max-width: 1000px;
+            margin: 30px auto;
+            background: rgba(22, 33, 62, 0.95);
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Score Display */
+        .score-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.4);
+            padding: 15px 25px;
+            border-radius: 15px;
+            border: 2px solid #4df1fb;
+            font-family: 'JetBrains Mono', monospace;
+            min-width: 150px;
+        }
+
+        .score-label {
+            font-size: 0.8rem;
+            color: #a8dadc;
+            margin-bottom: 5px;
+        }
+
+        .score-value {
+            font-size: 1.8rem;
+            color: #ffd700;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        /* Timer Styling */
+        .timer-box {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.8rem;
+            color: #4df1fb;
+            text-shadow: 0 0 15px rgba(77, 241, 251, 0.6);
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        /* RJ45 Connector Styling */
+        .rj45-wrapper {
+            background: linear-gradient(180deg, #2c3e50, #1a252f);
+            width: 100%;
+            max-width: 580px;
+            margin: 0 auto;
+            padding: 25px;
+            border-radius: 20px 20px 45px 45px;
+            border: 5px solid #34495e;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .slot-container {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 12px;
+            min-height: 180px;
+        }
+
+        .slot {
+            width: 48px;
+            height: 160px;
+            border: 2px dashed #4df1fb;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.3s;
+        }
+
+        .slot:hover {
+            background: rgba(77, 241, 251, 0.1);
+            border-color: #00d4ff;
+        }
+
+        /* Kabel Styling */
+        .cable {
+            width: 48px;
+            height: 160px;
+            border-radius: 6px;
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0,0,0,0.3);
+        }
+
+        .cable:active {
+            cursor: grabbing;
+            transform: scale(1.08) rotate(2deg);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+        }
+
+        /* Cable Colors (T568B) */
+        .wo { background: repeating-linear-gradient(45deg, #fff, #fff 10px, #ff8c00 10px, #ff8c00 20px); }
+        .o  { background: linear-gradient(180deg, #ff8c00, #ff6500); }
+        .wg { background: repeating-linear-gradient(45deg, #fff, #fff 10px, #2ecc71 10px, #2ecc71 20px); }
+        .bl { background: linear-gradient(180deg, #3498db, #2874a6); }
+        .wbl { background: repeating-linear-gradient(45deg, #fff, #fff 10px, #3498db 10px, #3498db 20px); }
+        .g  { background: linear-gradient(180deg, #2ecc71, #27ae60); }
+        .wbr { background: repeating-linear-gradient(45deg, #fff, #fff 10px, #8b4513 10px, #8b4513 20px); }
+        .br  { background: linear-gradient(180deg, #8b4513, #6e3610); }
+
+        .cable-pool {
+            min-height: 200px;
+            border: 3px solid #0f3460;
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 40px;
+            background: rgba(0,0,0,0.25);
+        }
+
+        .status-badge {
+            font-size: 1.6rem;
+            font-weight: bold;
+            height: 50px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Instruction Text (Blink Animation) */
+        .instruction-text {
+            font-size: 1.2rem;
+            color: #fff;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            animation: blink 1.5s ease-in-out infinite;
+            font-weight: 500;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .instruction-text.hidden {
+            display: none;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #e94560, #ff4d6d);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+            display: none;
+        }
+
+        .btn-reset:hover {
+            background: linear-gradient(135deg, #ff4d6d, #ff6b7a);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(233, 69, 96, 0.6);
+        }
+
+        .btn-reset.show {
+            display: inline-block;
+            animation: bounceIn 0.6s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* ===== SUCCESS MODAL ===== */
+        .success-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .success-modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            padding: 50px;
+            border-radius: 30px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            position: relative;
+            animation: modalSlideUp 0.5s ease;
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            animation: iconPop 0.6s ease 0.3s backwards;
+        }
+
+        @keyframes iconPop {
+            0% { transform: scale(0) rotate(-180deg); }
+            50% { transform: scale(1.2) rotate(10deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        .modal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            color: #ffd700;
+            margin-bottom: 15px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .modal-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            color: #4df1fb;
+            margin: 20px 0;
+        }
+
+        .modal-points {
+            font-size: 1.5rem;
+            color: #2ecc71;
+            margin: 15px 0;
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 20px;
+                margin: 15px;
+                border-radius: 20px;
+            }
+
+            .splash-logo {
+                font-size: 2.5rem;
+            }
+
+            .splash-subtitle {
+                font-size: 1rem;
+            }
+
+            .score-display {
+                position: static;
+                margin: 0 auto 20px;
+                display: inline-block;
+                padding: 12px 20px;
+                min-width: 130px;
+            }
+
+            .score-label {
+                font-size: 0.7rem;
+            }
+
+            .score-value {
+                font-size: 1.5rem;
+            }
+
+            .timer-box {
+                font-size: 2rem;
+            }
+
+            .rj45-wrapper {
+                padding: 15px;
+                max-width: 100%;
+            }
+
+            .slot-container {
+                gap: 4px;
+                padding: 15px;
+                min-height: 140px;
+            }
+
+            .slot, .cable {
+                width: 36px;
+                height: 130px;
+            }
+
+            .cable-pool {
+                padding: 20px;
+                gap: 10px;
+            }
+
+            .instruction-text {
+                font-size: 1rem;
+            }
+
+            .status-badge {
+                font-size: 1.2rem;
+            }
+
+            .modal-content {
+                padding: 30px 20px;
+            }
+
+            .modal-title {
+                font-size: 2rem;
+            }
+
+            .modal-time {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .score-display {
+                padding: 10px 15px;
+                min-width: 110px;
+            }
+
+            .score-label {
+                font-size: 0.65rem;
+            }
+
+            .score-value {
+                font-size: 1.3rem;
+            }
+
+            .timer-box {
+                font-size: 1.5rem;
+                padding: 10px;
+            }
+
+            .slot, .cable {
+                width: 30px;
+                height: 110px;
+            }
+
+            .slot-container {
+                gap: 3px;
+            }
+
+            .instruction-text {
+                font-size: 0.9rem;
+            }
+
+            .modal-icon {
+                font-size: 3.5rem;
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .score-display {
+                top: 15px;
+                right: 15px;
+                padding: 12px 20px;
+                min-width: 140px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Confetti Canvas -->
+<canvas id="confetti-canvas"></canvas>
+
+<!-- Success Modal -->
+<div id="success-modal" class="success-modal">
+    <div class="modal-content">
+        <div class="modal-icon">🏆</div>
+        <div class="modal-title">SEMPURNA!</div>
+        <div class="modal-time">Waktu: <span id="modal-time-value">00:00:00</span></div>
+        <div class="modal-points">+<span id="modal-points-value">100</span> Poin</div>
+        <button onclick="closeModal()" class="btn btn-reset show">Tutup</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="main-container text-center">
+        <div class="score-display">
+            <div class="score-label">TOTAL POIN</div>
+            <div class="score-value" id="total-score">0</div>
+        </div>
+
+        <h2 class="fw-bold mb-1">Crimping Speed Challenge</h2>
+
+        <div class="timer-box" id="timerDisplay">00:00:00</div>
+
+        <div class="rj45-wrapper">
+            <div id="rj45-slots" class="slot-container"></div>
+        </div>
+
+        <div id="instruction-text" class="instruction-text">
+            ⬇️ Drag and Drop kabel LAN sesuai urutan! ⬇️
+        </div>
+
+        <div id="status" class="status-badge text-warning"></div>
+
+        <div id="cable-source" class="cable-pool">
+            <!-- Kabel akan di-generate secara acak oleh JavaScript -->
+        </div>
+
+        <div class="mt-4">
+            <button onclick="resetGame()" class="btn btn-reset" id="resetBtn">Restart</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+    const sourceEl = document.getElementById('cable-source');
+    const targetEl = document.getElementById('rj45-slots');
+    const statusEl = document.getElementById('status');
+    const timerEl = document.getElementById('timerDisplay');
+    const scoreEl = document.getElementById('total-score');
+    const resetBtn = document.getElementById('resetBtn');
+    const successModal = document.getElementById('success-modal');
+    const confettiCanvas = document.getElementById('confetti-canvas');
+    const instructionText = document.getElementById('instruction-text');
+
+    const straightOrder = ["wo", "o", "wg", "bl", "wbl", "g", "wbr", "br"];
+    
+    let startTime;
+    let timerInterval;
+    let isRunning = false;
+    let timerStarted = false;
+
+    // Fungsi untuk mengacak array (Fisher-Yates Shuffle)
+    function shuffleArray(array) {
+        const shuffled = [...array]; // Copy array
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
+
+    // Generate kabel dengan urutan acak
+    function generateRandomCables() {
+        const shuffled = shuffleArray(straightOrder);
+        const cablePool = document.getElementById('cable-source');
+        
+        // Clear existing cables (jika ada)
+        cablePool.innerHTML = '';
+        
+        // Generate kabel dengan urutan acak
+        shuffled.forEach(cableId => {
+            const cable = document.createElement('div');
+            cable.className = `cable ${cableId}`;
+            cable.setAttribute('data-id', cableId);
+            cablePool.appendChild(cable);
+        });
+    }
+
+    // Load score from localStorage
+    function loadScore() {
+        const savedScore = localStorage.getItem('lanCrimpingScore');
+        const score = savedScore ? parseInt(savedScore) : 0;
+        scoreEl.innerText = score;
+        return score;
+    }
+
+    // Save score to localStorage
+    function saveScore(points) {
+        const currentScore = loadScore();
+        const newScore = currentScore + points;
+        localStorage.setItem('lanCrimpingScore', newScore);
+        scoreEl.innerText = newScore;
+        return newScore;
+    }
+
+    // Timer Logic
+    function startTimer() {
+        if (!isRunning) {
+            isRunning = true;
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 10);
+        }
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+        isRunning = false;
+    }
+
+    function updateTimer() {
+        const elapsedTime = Date.now() - startTime;
+        const diff = new Date(elapsedTime);
+        const mins = diff.getUTCMinutes().toString().padStart(2, '0');
+        const secs = diff.getUTCSeconds().toString().padStart(2, '0');
+        const ms = Math.floor(diff.getUTCMilliseconds() / 10).toString().padStart(2, '0');
+        timerEl.innerText = `${mins}:${secs}:${ms}`;
+    }
+
+    // Calculate points based on time (faster = more points)
+    function calculatePoints(timeInMs) {
+        const seconds = timeInMs / 1000;
+        if (seconds < 10) return 200;
+        if (seconds < 20) return 150;
+        if (seconds < 30) return 100;
+        if (seconds < 60) return 75;
+        return 50;
+    }
+
+    // Confetti Animation
+    function createConfetti() {
+        const ctx = confettiCanvas.getContext('2d');
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+
+        const particles = [];
+        const colors = ['#ffd700', '#4df1fb', '#2ecc71', '#e74c3c', '#9b59b6', '#f39c12'];
+
+        for (let i = 0; i < 150; i++) {
+            particles.push({
+                x: Math.random() * confettiCanvas.width,
+                y: Math.random() * confettiCanvas.height - confettiCanvas.height,
+                r: Math.random() * 6 + 4,
+                d: Math.random() * 150 + 10,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                tilt: Math.floor(Math.random() * 10) - 10,
+                tiltAngleIncremental: Math.random() * 0.07 + 0.05,
+                tiltAngle: 0
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                ctx.beginPath();
+                ctx.lineWidth = p.r / 2;
+                ctx.strokeStyle = p.color;
+                ctx.moveTo(p.x + p.tilt + p.r, p.y);
+                ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
+                ctx.stroke();
+
+                p.tiltAngle += p.tiltAngleIncremental;
+                p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                p.tilt = Math.sin(p.tiltAngle - i / 3) * 15;
+
+                if (p.y > confettiCanvas.height) {
+                    particles[i] = {
+                        x: Math.random() * confettiCanvas.width,
+                        y: -20,
+                        r: p.r,
+                        d: p.d,
+                        color: p.color,
+                        tilt: p.tilt,
+                        tiltAngleIncremental: p.tiltAngleIncremental,
+                        tiltAngle: p.tiltAngle
+                    };
+                }
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+
+        // Stop confetti after 5 seconds
+        setTimeout(() => {
+            ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        }, 5000);
+    }
+
+    function showSuccessModal(time, points) {
+        document.getElementById('modal-time-value').innerText = time;
+        document.getElementById('modal-points-value').innerText = points;
+        successModal.classList.add('show');
+        createConfetti();
+    }
+
+    function closeModal() {
+        successModal.classList.remove('show');
+        resetBtn.classList.add('show');
+    }
+
+    function resetGame() {
+        location.reload();
+    }
+
+    // Initialize
+    generateRandomCables(); // Generate kabel dengan urutan acak
+    loadScore();
+
+    // Drag and Drop Logic (harus setelah kabel di-generate)
+    new Sortable(sourceEl, {
+        group: 'lan-cable',
+        animation: 200,
+        sort: true,
+        onStart: () => {
+            if (!timerStarted) {
+                startTimer();
+                timerStarted = true;
+                instructionText.classList.add('hidden');
+                resetBtn.classList.add('show');
+            }
+        }
+    });
+
+    new Sortable(targetEl, {
+        group: 'lan-cable',
+        animation: 200,
+        onStart: () => {
+            if (!timerStarted) {
+                startTimer();
+                timerStarted = true;
+                instructionText.classList.add('hidden');
+                resetBtn.classList.add('show');
+            }
+        },
+        onAdd: checkSequence,
+        onUpdate: checkSequence,
+        onRemove: checkSequence
+    });
+
+    function checkSequence() {
+        const currentCables = Array.from(targetEl.children);
+        const currentOrder = currentCables.map(c => c.dataset.id);
+
+        if (currentOrder.length === 8) {
+            const isStraight = JSON.stringify(currentOrder) === JSON.stringify(straightOrder);
+            
+            if (isStraight) {
+                stopTimer();
+                const finalTime = timerEl.innerText;
+                const elapsedMs = Date.now() - startTime;
+                const points = calculatePoints(elapsedMs);
+                
+                saveScore(points);
+                
+                statusEl.innerText = `🏆 SEMPURNA!`;
+                statusEl.className = "status-badge text-success";
+                targetEl.style.boxShadow = "0 0 30px #2ecc71";
+
+                setTimeout(() => {
+                    showSuccessModal(finalTime, points);
+                }, 500);
+            } else {
+                statusEl.innerText = "❌ Urutan Salah!";
+                statusEl.className = "status-badge text-danger";
+                targetEl.style.boxShadow = "none";
+            }
+        } else {
+            statusEl.innerText = `Terpasang: ${currentOrder.length}/8 kabel`;
+            statusEl.className = "status-badge text-warning";
+        }
+    }
+</script>
+
+</body>
+</html>
